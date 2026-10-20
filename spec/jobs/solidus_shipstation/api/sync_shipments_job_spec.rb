@@ -19,7 +19,7 @@ RSpec.describe SolidusShipstation::Api::SyncShipmentsJob do
       context 'when the error is a rate limit' do
         it 'retries intelligently when hitting a rate limit' do
           freeze_time do
-            shipment = build_stubbed(:shipment) { |s| stub_syncability(s, true) }
+            shipment = create(:shipment) { |s| stub_syncability(s, true) }
             stub_failing_batch_syncer(SolidusShipstation::Api::RateLimitedError.new(
               response_code: 429,
               response_headers: { 'X-Rate-Limit-Reset' => 30 },
@@ -29,7 +29,7 @@ RSpec.describe SolidusShipstation::Api::SyncShipmentsJob do
 
             described_class.perform_now([shipment])
 
-            expect(described_class).to have_been_enqueued.at(30.seconds.from_now)
+            expect(described_class).to have_been_enqueued.with([shipment]).at(30.seconds.from_now)
           end
         end
       end
@@ -94,13 +94,13 @@ RSpec.describe SolidusShipstation::Api::SyncShipmentsJob do
     end
 
     it 'fires a solidus_shipstation.api.sync_skipped event' do
-      stub_const('Spree::Event', class_spy(Spree::Event))
+      allow(SolidusShipstation::Events).to receive(:fire)
       shipment = build_stubbed(:shipment) { |s| stub_syncability(s, false) }
       stub_successful_batch_syncer
 
       described_class.perform_now([shipment])
 
-      expect(Spree::Event).to have_received(:fire).with(
+      expect(SolidusShipstation::Events).to have_received(:fire).with(
         'solidus_shipstation.api.sync_skipped',
         shipment: shipment,
       )

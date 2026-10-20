@@ -11,6 +11,10 @@ module SolidusShipstation
 
     engine_name 'solidus_shipstation'
 
+    initializer 'solidus_shipstation.events', after: 'spree.core.pub_sub' do |app|
+      app.reloader.to_prepare { SolidusShipstation::Events.register }
+    end
+
     # use rspec for tests
     config.generators do |g|
       g.test_framework :rspec
