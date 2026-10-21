@@ -206,3 +206,17 @@ Please refer to the dedicated [page](https://github.com/solidusio/solidus/wiki/H
 ## License
 
 Copyright (c) 2013 Boomer Digital, released under the New BSD License.
+
+### Solidus event compatibility
+
+API synchronization emits the existing `solidus_shipstation.api.*` events through
+`Spree::Event` when that API is available, or through `Spree::Bus` on newer Solidus
+versions. The engine registers the bus events during preparation, including reloads.
+Event names and payloads remain unchanged; bus event names are symbols.
+
+HTTP 429 retries preserve the selected shipment arguments and the server's delay.
+Other exhausted request errors still call the configured error handler; the default
+handler logs the original error and context and does not raise. A completed job
+therefore does not prove every shipment was synchronized. Check per-shipment
+results or sync metadata. These compatibility changes do not select a job adapter,
+change queues, or add retries.

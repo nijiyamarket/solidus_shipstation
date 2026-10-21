@@ -15,7 +15,7 @@ module SolidusShipstation
 
         sync_shipments(shipments)
       rescue RateLimitedError => e
-        self.class.set(wait: e.retry_in).perform_later
+        self.class.set(wait: e.retry_in).perform_later(shipments)
       end
 
       private
@@ -25,7 +25,7 @@ module SolidusShipstation
           if ThresholdVerifier.call(shipment)
             true
           else
-            ::Spree::Event.fire(
+            SolidusShipstation::Events.fire(
               'solidus_shipstation.api.sync_skipped',
               shipment: shipment,
             )
